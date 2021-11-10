@@ -12,13 +12,77 @@ library(usethis)
 
 
 tryCatch(
-  expr = { #here goes all the "scheduled script" 
+  expr = { #here goes all the "scheduled scripts" 
+
+    # Selenium config - Firefox profile ---------------------------------------
+
+    HEADLESS = T
+    EXTRA_SLEEP = 350
+    CREDENTIAL_LABEL = "suncor_lgorokhov"
+    DOWNLOAD_PATH = "C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Internal files dump"
+    KILL_SERVER = F
     
-    # cority rselenium --------------------------------------------------------
-    downloadPath <- "C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump"
+    if (!require("pacman")) install.packages("pacman")
+    pacman::p_load(tidyverse, stringr, RSelenium, keyringr)
+    
+    # credentials
+    credential_label <- CREDENTIAL_LABEL
+    credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
+    
+    # rselenium download path
+    downloadPath <- DOWNLOAD_PATH %>%
+      stringr::str_replace_all("/", "\\\\\\\\")
+    
+    # create temp firefox profile
+    fprof <- makeFirefoxProfile(
+      list(
+        browser.download.dir = downloadPath,
+        browser.download.folderList = 2L,
+        browser.download.manager.showWhenStarting = FALSE,
+        browser.helperApps.deleteTempFileOnExit = TRUE,
+        browser.helperApps.neverAsk.openFile = "text/csv;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        browser.helperApps.neverAsk.saveToDisk = "text/csv;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      )
+    )
+    
+    # add extra capabilities: i.e. headless + temp profile
+    if (HEADLESS == T) {
+      exCap <- list(
+        firefox_profile = fprof$firefox_profile, 
+        "moz:firefoxOptions" = list(args = list('--headless'))
+      )
+    } else {
+      exCap <- list(
+        firefox_profile = fprof$firefox_profile
+      )
+    }
+    
+    # record the port for the server
+    port <- netstat::free_port()
+    
+    # start server
+    rD <- rsDriver(
+      browser = "firefox",
+      port = port,
+      extraCapabilities = exCap
+    )
+    
+    remDr <- rD[["client"]]
+    
+    # set implicit timeout
+    remDr$setTimeout(type = "implicit", milliseconds = EXTRA_SLEEP * 1000)
+    
+    # set page load timeout
+    remDr$setTimeout(type = "page load", milliseconds = EXTRA_SLEEP * 1000)
+    
+    # set timeout for script to run
+    remDr$setTimeout(type = "script", milliseconds = EXTRA_SLEEP * 1000 + 30000)    
+    
+    # internal --------------------------------------------------------
+    
     
     # gather report links of interest
-    cority_reports <- c(
+    CORITY_REPORT_URLS <- c(
       # Cority_A&D_Cases_Daily
       "https://suncor.maspcl2.medgate.com/gx2/reportwriter/display.rails?Id=4982",
       # Final Vaccine Questionnaire Response No/PNTA
@@ -33,154 +97,44 @@ tryCatch(
     
     source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Cority Scraper.R", echo = F, local = T)
     
-    rselenium <- cority_scraper(
-      DOWNLOAD_PATH = downloadPath, 
-      CORITY_REPORT_URLS = cority_reports, 
-      EXTRA_SLEEP = 350,
-      KILL_SERVER = F,
-      HEADLESS = T
-    )
+    # contractors
+    source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Contractors.R", echo = F, local = T)
     
+    #iframe
+    source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/iframe.R", echo = F, local = T)
+    
+    #contractors_reporting
+    source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/contractors_reporting.R", echo = F, local = T)
+    
+    # livelink data pull
+    source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/livelink.R", echo = F, local = T)
+    
+    # rselenium <- cority_scraper(
+    #   DOWNLOAD_PATH = downloadPath, 
+    #   CORITY_REPORT_URLS = cority_reports, 
+    #   EXTRA_SLEEP = 350,
+    #   KILL_SERVER = F,
+    #   HEADLESS = T
+    # )
+    # 
+    # remDr <- rselenium$RemoteDriver
+    # 
+    # pid <- rselenium$PID
     
     # external ----------------------------------------------------------------
-    remDr <- rselenium$RemoteDriver
     
-    pid <- rselenium$PID
-    
-    # land on external website
-    remDr$navigate("https://covid.cdc.gov/covid-data-tracker/#vaccinations")
-    
-    Sys.sleep(2)
-    
-    table_toggler <- remDr$findElement(
-      using = "xpath",
-      value = '//h4[@id="vaccinations-table-title"]'
-    )
-    
-    table_toggler$getElementText()
-    
-    table_note <- remDr$findElement(
-      using = 'xpath',
-      value = '//*[@id="table-note"]'
-    )
-    
-    table_note$getElementText()
-    
-    table_toggler$clickElement()
-    
-    if (table_note$isElementDisplayed() == FALSE) {
-      table_toggler$clickElement()
-    }
-    
-    Sys.sleep(1)
-    
-    download.csv <- remDr$findElement(
-      using = "xpath",
-      value = '//button[@id="btnVaccinationsExport"]'
-    )
-    
-    download.csv$getElementText()
-    
-    download.csv$clickElement()
-    
-    Sys.sleep(2)
+    # land on external website #1 - covid_data_tracker
+    source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Ecovid__data_tracker.R", echo = F, local = T)
     
     
-    # land on external site #2
-    remDr$navigate("https://covid19tracker.ca/provincevac.html?p=ON")
+    # land on external site #2 - covid19tracker
+    source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Ecovid19tracker.R", echo = F, local = T)
     
-    Sys.sleep(5)
+    # google drive
+    source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Egoogle_drive.R", echo = F, local = T)
     
-    webElement <- remDr$findElement(
-      using = "xpath",
-      value = '//table[@id="dataTable2"]'
-    )
-    
-    text <- webElement$getElementText()
-    
-    df <- data.frame(
-      rows = c(
-        text %>% stringr::str_split(pattern = "\\n")%>% unlist()
-      )
-    ) %>% separate(
-      col = rows,
-      into = c('row', 'numbers'),
-      sep = "(?<=[a-zA-Z])\\s*(?=[0-9])"
-    )
-    
-    df$col1 <- do.call(rbind, strsplit(df$numbers, ' (?=[^ ]+$)', perl=TRUE))[,1]
-    df$col2 <- do.call(rbind, strsplit(df$numbers, ' (?=[^ ]+$)', perl=TRUE))[,2]
-    
-    df$numbers <- NULL
-    df <- df[-1,]
-    rownames(df) <- NULL
-    
-    colnames(df) <- c("Region", "Total Doses Administered", "People Fully Vaccinated")
-    
-    df$`Total Doses Administered` <- gsub("\\s*\\([^\\)]+\\)","",df$`Total Doses Administered`)
-    df$`People Fully Vaccinated` <- gsub("\\s*\\([^\\)]+\\)","",df$`People Fully Vaccinated`)
-    
-    df$`Total Doses Administered` <- gsub("[^0-9,-]", "", df$`Total Doses Administered`)
-    df$`People Fully Vaccinated` <- gsub("[^0-9,-]", "", df$`People Fully Vaccinated`)
-    
-    df[df == ""] <- "No Data"
-    
-    # output ontario external data
-    write.csv(
-      x = df, 
-      file = "C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/ON_coverage.csv", 
-      row.names = F
-    )
-    
-    # google drive ------------------------------------------------------------
-    remDr$navigate('https://drive.google.com/file/d/1cjLn3Qkvs8hNJDGzCuqrDzbeNechUmkW/view')
-    
-    remDr$findElement(
-      using = 'xpath',
-      value = '//div[@class = "ndfHFb-c4YZDc-Bz112c ndfHFb-c4YZDc-C7uZwb-LgbsSe-Bz112c ndfHFb-c4YZDc-nupQLb-Bz112c"]'
-    )$clickElement()
-    
-    # vaccine rollout ---------------------------------------------------------
-    url <- "https://www.canada.ca/en/public-health/services/diseases/2019-novel-coronavirus-infection/prevention-risks/covid-19-vaccine-treatment/vaccine-rollout.html"
-    
-    # extract html nodes
-    scrape_html_data <- read_html(url)
-    
-    tabled_scrape_html_data <- html_nodes(
-      scrape_html_data,
-      css = "table"
-    )
-    
-    dfList <- lapply(
-      X = tabled_scrape_html_data,
-      FUN = function (table) html_table(table, fill = T)
-    )
-    
-    html_lines <- read_lines("https://www.canada.ca/en/public-health/services/diseases/2019-novel-coronavirus-infection/prevention-risks/covid-19-vaccine-treatment/vaccine-rollout.html")
-    
-    scrape_nodes <- html_nodes(scrape_html_data, "caption")
-    
-    scrape_text <- html_text(scrape_nodes, trim = TRUE)
-    
-    scrape_text <- strsplit(scrape_text, "[\r\n]+")
-    
-    names_list <- c(unlist(scrape_text))
-    
-    # scrape_nodes <- html_nodes(scrape_html_data, "h3")
-    # 
-    # scrape_text <- html_text(scrape_nodes, trim = TRUE)
-    # 
-    # scrape_text <- strsplit(scrape_text, "[\r\n]+")
-    # 
-    # names_list <- janitor::make_clean_names(c(names_list, unlist(scrape_text)))
-    
-    dfList <- setNames(dfList, names_list)
-    
-    openxlsx::write.xlsx(
-      x = dfList,
-      file = "C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/vaccine_rollout.xlsx"
-    )
-    
+    # vaccine rollout
+    source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Evaccine_rollout.R", echo = F, local = T)
     
     # # risk assessment ---------------------------------------------------------
     # remDr$navigate("https://covid.cdc.gov/covid-data-tracker/#trends_dailytrendscases")
@@ -228,147 +182,10 @@ tryCatch(
     # )
     
     
-    # contractors -------------------------------------------------------------
-    remDr$navigate("https://suncor.service-now.com/nav_to.do?uri=%2Fx_suen2_ehsnow_contractor_vaccination_reporting_list.do%3Fsysparm_userpref_module%3Dc682ff33db40f8542d29294648961997%26sysparm_clear_stack%3Dtrue")
-    
-    # find login element
-    login_webElement <- remDr$findElement(
-      using = "xpath",
-      value = '//*[@id="i0116"]'
-    )$sendKeysToElement(list("lgorokhov@suncor.com", key = "enter"))
-    
-    Sys.sleep(2)
-    
-    # find password element
-    password_webElement <- remDr$findElement(
-      using = "xpath",
-      value = '//*[@id="i0118"]'
-    )
-    
-    credential_label <- "suncor_lgorokhov"
-    credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
-    
-    password_webElement$sendKeysToElement(list(keyringr::decrypt_dpapi_pw(credential_path), key = "enter"))
-    
-    Sys.sleep(2)
-    
-    enter_key <- remDr$findElement("css", "body")
-    enter_key$sendKeysToElement(list(key = "enter"))
-    
-    Sys.sleep(5)
-    
-    # iframe ------------------------------------------------------------------
-    remDr$switchToFrame(remDr$findElement(using = 'xpath', value = '//*[@id="gsft_main"]'))
-    
-    Sys.sleep(5)
-    
-    remDr$findElement(
-      using = 'xpath',
-      value = '//*[@id="hdr_x_suen2_ehsnow_contractor_vaccination_reporting"]/th[@glide_label = "Number"]/span/i'
-    )$clickElement()
-    
-    Sys.sleep(5)
-    
-    export_window <- remDr$findElement(
-      using = 'xpath',
-      value = '//*[@id="context_list_headerx_suen2_ehsnow_contractor_vaccination_reporting"]/div[contains(., "Export")]'
-    )
-    
-    export_window$highlightElement()
-    
-    Sys.sleep(5)
-    
-    remDr$mouseMoveToLocation(
-      webElement = export_window
-    )
-    
-    Sys.sleep(5)
-    
-    remDr$findElement(
-      using = 'xpath',
-      value = '//*[@id="d1ad2f010a0a0b3e005c8b7fbd7c4e28_x_suen2_ehsnow_contractor_vaccination_reporting"]/div[contains(., "CSV")]'
-    )$clickElement()
-    
-    Sys.sleep(5)
-    
-    remDr$findElement(
-      using = 'xpath',
-      value = '//*[@id="download_button"]'
-    )$clickElement()
-    
-    Sys.sleep(5)
-    
-    
-    # contractor reporting ----------------------------------------------------
-    remDr$navigate("https://suncor.service-now.com/nav_to.do?uri=%2Fx_suen2_ehsnow_contractor_reporting_list.do%3Fsysparm_clear_stack%3Dtrue%26sysparm_userpref_module%3D059d1eecdbf8941008a4c3af299619a2")
-    
-    remDr$switchToFrame(remDr$findElement(using = 'xpath', value = '//*[@id="gsft_main"]'))
-    
-    Sys.sleep(5)
-    
-    remDr$findElement(
-      using = 'xpath',
-      value = '//*[@id="hdr_x_suen2_ehsnow_contractor_reporting"]/th[@glide_label = "Number"]/span/i'
-    )$clickElement()
-    
-    Sys.sleep(5)
-    
-    export_window <- remDr$findElement(
-      using = 'xpath',
-      value = '//*[@id="context_list_headerx_suen2_ehsnow_contractor_reporting"]/div[contains(., "Export")]'
-    )
-    
-    export_window$highlightElement()
-    
-    Sys.sleep(5)
-    
-    remDr$mouseMoveToLocation(
-      webElement = export_window
-    )
-    
-    Sys.sleep(5)
-    
-    remDr$findElement(
-      using = 'xpath',
-      value = '//*[@id="d1ad2f010a0a0b3e005c8b7fbd7c4e28_x_suen2_ehsnow_contractor_reporting"]/div[contains(., "CSV")]'
-    )$clickElement()
-    
-    Sys.sleep(5)
-    
-    remDr$findElement(
-      using = 'xpath',
-      value = '//*[@id="download_button"]'
-    )$clickElement()
-    
-    Sys.sleep(5)
-    # livelink data pull ------------------------------------------------------
-    download.file(
-      url = "http://livelink/ecm/nodes/709040692/Essential%20Workers%20List.xlsx",
-      destfile="C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/Essential Workers List.xlsx",
-      mode="wb"
-    )
-    
-    download.file(
-      url = "http://livelink/ecm/nodes/709040692/Headcount%20for%20EW.xlsx",
-      destfile="C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/Headcount for EW.xlsx",
-      mode="wb"
-    )
-    
-    download.file(
-      url = "http://livelink/ecm/nodes/709040692/Work%20Addresses.xlsx",
-      destfile="C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/Work Addresses.xlsx",
-      mode="wb"
-    )
-    
-    # AKT_IDM
-    download.file(
-      url = "http://livelink/ecm/nodes/709040692/AKT_IDM.xlsx",
-      destfile="C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/AKT_IDM.xlsx",
-      mode="wb"
-    )
     
     
     
+    system(paste0("Taskkill /F /T /PID ", pid))
     message("Successfully executed the call.")
   },
   error = function(e){
