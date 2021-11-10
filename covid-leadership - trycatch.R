@@ -6,6 +6,8 @@ library(janitor)
 library(xml2)
 library(openxlsx)
 library(emayili)
+#for github commits
+library(usethis)
 
 
 
@@ -13,7 +15,7 @@ tryCatch(
   expr = { #here goes all the "scheduled script" 
     
     # cority rselenium --------------------------------------------------------
-    downloadPath <- "C:/Automated_Projects/covid_leadership/Data/"
+    downloadPath <- "C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump"
     
     # gather report links of interest
     cority_reports <- c(
@@ -29,7 +31,7 @@ tryCatch(
       "https://suncor.maspcl2.medgate.com/gx2/reportwriter/display.rails?Id=4929"
     )
     
-    source("C:/Automated_Projects/functions/FUN_CORITY_SCRAPER.R", echo = F, local = T)
+    source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Cority Scraper.R", echo = F, local = T)
     
     rselenium <- cority_scraper(
       DOWNLOAD_PATH = downloadPath, 
@@ -126,7 +128,7 @@ tryCatch(
     # output ontario external data
     write.csv(
       x = df, 
-      file = "C:/Automated_Projects/covid_leadership/Data/ON_coverage.csv", 
+      file = "C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/ON_coverage.csv", 
       row.names = F
     )
     
@@ -176,7 +178,7 @@ tryCatch(
     
     openxlsx::write.xlsx(
       x = dfList,
-      file = "C:/Automated_Projects/covid_leadership/Data/vaccine_rollout.xlsx"
+      file = "C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/vaccine_rollout.xlsx"
     )
     
     
@@ -342,26 +344,26 @@ tryCatch(
     # livelink data pull ------------------------------------------------------
     download.file(
       url = "http://livelink/ecm/nodes/709040692/Essential%20Workers%20List.xlsx",
-      destfile="C:/Automated_Projects/covid_leadership/Data/Essential Workers List.xlsx",
+      destfile="C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/Essential Workers List.xlsx",
       mode="wb"
     )
     
     download.file(
       url = "http://livelink/ecm/nodes/709040692/Headcount%20for%20EW.xlsx",
-      destfile="C:/Automated_Projects/covid_leadership/Data/Headcount for EW.xlsx",
+      destfile="C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/Headcount for EW.xlsx",
       mode="wb"
     )
     
     download.file(
       url = "http://livelink/ecm/nodes/709040692/Work%20Addresses.xlsx",
-      destfile="C:/Automated_Projects/covid_leadership/Data/Work Addresses.xlsx",
+      destfile="C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/Work Addresses.xlsx",
       mode="wb"
     )
     
     # AKT_IDM
     download.file(
       url = "http://livelink/ecm/nodes/709040692/AKT_IDM.xlsx",
-      destfile="C:/Automated_Projects/covid_leadership/Data/AKT_IDM.xlsx",
+      destfile="C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/Test Files Dump/AKT_IDM.xlsx",
       mode="wb"
     )
     
@@ -381,7 +383,7 @@ tryCatch(
     )
     
     msg <- envelope() %>%
-      to(c("lgorokhov@suncor.com", "ypaulia@suncor.com")) %>%
+      to(c("ypaulia@suncor.com")) %>%
       from("scriptsscheduling@gmail.com") %>%
       subject("Error") %>%
       text(paste0("Error: ", e))
