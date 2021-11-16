@@ -59,9 +59,6 @@ run_piece_of_code(source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch d
 # contractors
 run_piece_of_code(source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/functions/IContractors.R", echo = F, local = T), 'Internal error: Contarctors data')
 
-#iframe
-run_piece_of_code(source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/functions/Iiframe.R", echo = F, local = T), 'Internal error: iframe')
-
 #contractors_reporting
 run_piece_of_code(source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/functions/Icontractors_reporting.R", echo = F, local = T), 'Internal error: contractors_reporting data')
 
