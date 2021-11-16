@@ -9,7 +9,6 @@ library(emayili)
 #for github commits
 library(usethis)
 
-
 run_piece_of_code <- function(piece_of_code, mes){
   
   tryCatch(
@@ -21,7 +20,7 @@ run_piece_of_code <- function(piece_of_code, mes){
       message('success')
       
     },
-    
+
     error = function(e){
       
       message('Caught an error!')
@@ -36,13 +35,11 @@ run_piece_of_code <- function(piece_of_code, mes){
       msg <- envelope() %>%
         to(c("ypaulia@suncor.com")) %>%
         from("scriptsscheduling@gmail.com") %>%
-        subject("Error") %>%
-        text(paste0(mes, "; R Error: ", e))
+        subject(mes) %>%
+        text(paste0("; R Error: ", e))
       
       smtp(msg, verbose = T)
       
-      # kill selenium server
-      system(paste0("Taskkill /F /T /PID ", pid))
       message(e)
       
     }
@@ -88,3 +85,7 @@ run_piece_of_code(source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch d
 
 # vaccine rollout
 run_piece_of_code(source("C:/Users/ypaulia/Documents/Covid-Leadership trycatch dev/functions/Evaccine_rollout.R", echo = F, local = T), 'External error: vaccine_rollout')
+
+
+# kill selenium server
+system(paste0("Taskkill /F /T /PID ", pid))
